@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { criarPostagem } from "../services/postagem";
 import { useRouter } from "next/navigation";
+import Header from "@/components/Header";
+import { Container, Typography, TextField, Button, Box } from "@mui/material";
+import Footer from "@/components/Footer";
+
 const PostagensPage = () => {
   const [assunto, setAssunto] = useState("");
   const [equipamento, setEquipamento] = useState("");
@@ -11,6 +15,7 @@ const PostagensPage = () => {
   const [success, setSuccess] = useState<string | null>(null);
 
   const router = useRouter();
+
   const handlePostar = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -31,7 +36,6 @@ const PostagensPage = () => {
     if (response) {
       setSuccess("Postagem criada com sucesso!");
       setError(null);
-
       router.push("/postagensUsuario");
     } else {
       setError("Erro ao criar a postagem.");
@@ -39,109 +43,157 @@ const PostagensPage = () => {
     }
   };
 
-  const containerStyle = {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "100vh",
-    backgroundColor: "#121212",
-    color: "#e0e0e0",
-    fontFamily: "Arial, sans-serif",
-  };
-
-  const formStyle = {
-    backgroundColor: "#1e1e1e",
-    padding: "20px",
-    borderRadius: "8px",
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
-    width: "400px",
-  };
-
-  const inputStyle = {
-    display: "block",
-    width: "100%",
-    padding: "10px",
-    margin: "10px 0",
-    borderRadius: "4px",
-    border: "1px solid #333",
-    backgroundColor: "#2c2c2c",
-    color: "#e0e0e0",
-  };
-
-  const textAreaStyle = {
-    display: "block",
-    width: "100%",
-    padding: "10px",
-    margin: "10px 0",
-    borderRadius: "4px",
-    border: "1px solid #333",
-    backgroundColor: "#2c2c2c",
-    color: "#e0e0e0",
-    height: "100px",
-  };
-
-  const buttonStyle = {
-    backgroundColor: "#6200ea",
-    color: "#ffffff",
-    padding: "10px",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    width: "100%",
-    fontSize: "16px",
-  };
-
-  const successMessageStyle = {
-    color: "green",
-    marginTop: "10px",
-  };
-
-  const errorMessageStyle = {
-    color: "red",
-    marginTop: "10px",
-  };
-
   return (
-    <div style={containerStyle}>
-      <h1>Criar Postagem</h1>
-      <form onSubmit={handlePostar} style={formStyle}>
-        <div>
-          <label>Assunto:</label>
-          <input
-            type="text"
-            value={assunto}
-            onChange={(e) => setAssunto(e.target.value)}
-            required
-            style={inputStyle}
-          />
-        </div>
-        <div>
-          <label>Equipamento:</label>
-          <input
-            type="text"
-            value={equipamento}
-            onChange={(e) => setEquipamento(e.target.value)}
-            required
-            style={inputStyle}
-          />
-        </div>
-        <div>
-          <label>Descrição:</label>
-          <textarea
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            required
-            style={textAreaStyle}
-          />
-        </div>
-        <button type="submit" style={buttonStyle}>
-          Postar
-        </button>
-      </form>
-      {error && <p style={errorMessageStyle}>{error}</p>}
-      {success && <p style={successMessageStyle}>{success}</p>}
-    </div>
+    <>
+      <Header />
+      <Container
+        className="min-h-screen bg-zinc-800"
+        sx={{
+          padding: "20px",
+          maxWidth: "1200px",
+          margin: "0 auto",
+          backgroundColor: "#1f1f1f",
+          color: "#e0e0e0",
+        }}
+      >
+        <Typography
+          variant="h4"
+          sx={{ marginTop: "3%", textAlign: "center" }}
+          gutterBottom
+        >
+          Criar Postagem
+        </Typography>
+
+        <form onSubmit={handlePostar}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              maxWidth: "600px",
+              margin: "0 auto",
+              marginTop: "3%",
+            }}
+          >
+            <TextField
+              label="Assunto"
+              variant="outlined"
+              value={assunto}
+              onChange={(e) => setAssunto(e.target.value)}
+              required
+              sx={{
+                backgroundColor: "#2d2d2d",
+                borderRadius: "4px",
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": {
+                    borderColor: "#555",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#e0e0e0",
+                  },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "#2196f3",
+                },
+                "& .MuiInputBase-input": {
+                  color: "#ffffff",
+                },
+              }}
+            />
+            <TextField
+              label="Equipamento"
+              variant="outlined"
+              value={equipamento}
+              onChange={(e) => setEquipamento(e.target.value)}
+              required
+              sx={{
+                backgroundColor: "#2d2d2d",
+                borderRadius: "4px",
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": {
+                    borderColor: "#555",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#e0e0e0",
+                  },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "#2196f3",
+                },
+                "& .MuiInputBase-input": {
+                  color: "#ffffff",
+                },
+              }}
+            />
+            <TextField
+              label="Descrição"
+              variant="outlined"
+              multiline
+              rows={4}
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              required
+              sx={{
+                backgroundColor: "#2d2d2d",
+                borderRadius: "4px",
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": {
+                    borderColor: "#555",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#e0e0e0",
+                  },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "#2196f3",
+                },
+                "& .MuiInputBase-input": {
+                  color: "#ffffff",
+                },
+              }}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              sx={{
+                backgroundColor: "#2196f3",
+                "&:hover": {
+                  backgroundColor: "#1976d2",
+                },
+                borderRadius: "4px",
+                padding: "10px 20px",
+                fontSize: "16px",
+                textTransform: "none",
+              }}
+            >
+              Postar
+            </Button>
+          </Box>
+        </form>
+        {error && (
+          <Typography
+            variant="body1"
+            color="#ff6b6b"
+            align="center"
+            sx={{ marginTop: "20px" }}
+          >
+            {error}
+          </Typography>
+        )}
+        {success && (
+          <Typography
+            variant="body1"
+            color="#4caf50"
+            align="center"
+            sx={{ marginTop: "20px" }}
+          >
+            {success}
+          </Typography>
+        )}
+      </Container>
+      <Footer></Footer>
+    </>
   );
 };
 

@@ -54,7 +54,7 @@ export const criarPostagem = async (
 
 // Função para buscar todas as postagens de um usuário
 export const getPostagens = async (
-  /* usuario_id: number */
+  
 ): Promise<GetPostagensResponse | null> => {
   try {
     const response: AxiosResponse<GetPostagensResponse> = await axios.get(
@@ -66,3 +66,29 @@ export const getPostagens = async (
     return null;
   }
 };
+
+// Função para excluir uma postagem
+export const excluirPostagem = async (postagemId: number): Promise<boolean> => {
+  try {
+    await axios.delete(`${API_URL}/postagens/${postagemId}`);
+    return true;
+  } catch (error) {
+    console.error("Erro ao excluir a postagem:", error);
+    return false;
+  }
+};
+
+
+// Função para selecionar uma postagem
+export const selecionarPostagem = async (postagemId: number): Promise<boolean> => {
+  try {
+    await axios.get(`${API_URL}/postagens/${postagemId}`);
+    return true;
+  } catch (error) {
+    console.error("Erro ao excluir a postagem:", error);
+    return false;
+  }
+};
+
+
+

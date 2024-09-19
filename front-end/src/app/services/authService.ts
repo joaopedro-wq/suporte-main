@@ -57,3 +57,22 @@ export const login = async (
     return null;
   }
 };
+
+
+interface BuscarUsuariosResponse {
+  data: RegisterResponse[]; 
+}
+
+// Atualize a função BuscarUsuarios
+export const BuscarUsuarios = async (): Promise<RegisterResponse[] | null> => {
+  try {
+    const response: AxiosResponse<BuscarUsuariosResponse> = await axios.get(
+      `${API_URL}/usuarios`
+    );
+
+    return response.data.data; // Acessando o array de usuários na resposta
+  } catch (error) {
+    console.error("Erro ao buscar usuários:", error);
+    return null;
+  }
+};
