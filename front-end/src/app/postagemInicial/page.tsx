@@ -13,6 +13,7 @@ import {
   Button,
   TextField,
   Badge,
+  
 } from "@mui/material";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -22,7 +23,11 @@ import {
   DeviceHub,
   Description,
   CalendarToday,
+  
 } from "@mui/icons-material";
+import InfoIcon from "@mui/icons-material/Info";
+import { useRouter } from "next/navigation";
+
 
 interface Postagem {
   id: number;
@@ -76,6 +81,7 @@ const [respostas, setRespostas] = useState<string[]>([]);
 
     fetchData();
   }, []);
+  const router = useRouter(); 
 
   useEffect(() => {
     const loadRespostas = async () => {
@@ -118,9 +124,9 @@ const [respostas, setRespostas] = useState<string[]>([]);
         const conteudoRespostas = respostasApi.data.map(
           (resposta) => resposta.conteudo
         );
-        setRespostas(conteudoRespostas); // Armazenar as respostas no estado
+        setRespostas(conteudoRespostas); 
       } else {
-        setRespostas([]); // Se não houver respostas, reseta o estado
+        setRespostas([]); 
       }
 
       setModalOpen(true);
@@ -135,8 +141,11 @@ const [respostas, setRespostas] = useState<string[]>([]);
     setSelectedPostagem(null);
     setResposta("");
   };
-
-  // Função para salvar a resposta
+    
+ const redirectToAvaliacao = () => {
+   router.push("/avaliacao"); 
+ };
+  
   // Função para salvar a resposta
 const handleSaveResposta = async () => {
   if (selectedPostagem) {
@@ -155,7 +164,7 @@ const handleSaveResposta = async () => {
   }
 };
 
-
+      
   return (
     <>
       <Header />
@@ -276,6 +285,33 @@ const handleSaveResposta = async () => {
                   <CalendarToday sx={{ color: "#e57373" }} />
                   {new Date(postagem.data_postagem).toLocaleDateString()}
                 </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: "10px",
+                  }}
+                >
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={(e) => {
+                      e.stopPropagation(); 
+                      redirectToAvaliacao(); 
+                    }}
+                    startIcon={<InfoIcon />}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: "bold",
+                      backgroundColor: "#3b82f6",
+                      "&:hover": {
+                        backgroundColor: "#2563eb",
+                      },
+                    }}
+                  >
+                    Ver Detalhes
+                  </Button>
+                </Box>
               </Box>
             ))}
           </Box>
@@ -528,7 +564,8 @@ const handleSaveResposta = async () => {
             </Box>
           </Box>
         </Modal>
-      </Container>
+          </Container>
+         
       <Footer />
     </>
   );
