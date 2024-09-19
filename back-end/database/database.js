@@ -1,6 +1,5 @@
 const sqlite3 = require("sqlite3").verbose();
 
-// Criar conexão com o banco de dados
 const db = new sqlite3.Database("./support.db", (err) => {
   if (err) {
     console.error("Erro ao conectar ao banco de dados: ", err);
@@ -9,12 +8,12 @@ const db = new sqlite3.Database("./support.db", (err) => {
   }
 });
 
-// Criação das tabelas
 const criarTabelas = () => {
   db.run(`CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
+    senha TEXT NOT NULL, 
     tipo TEXT NOT NULL
   )`);
 
@@ -48,3 +47,4 @@ const criarTabelas = () => {
 criarTabelas();
 
 module.exports = db;
+

@@ -1,4 +1,4 @@
-const db = require("../database/database");
+const db = require("../database/database.js");
 
 exports.criarPostagem = (req, res) => {
   const { usuario_id, assunto, equipamento, descricao } = req.body;

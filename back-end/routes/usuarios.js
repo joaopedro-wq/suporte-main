@@ -10,4 +10,6 @@ router.get("/:id", usuarioController.buscarUsuarioPorId);
 
 router.put("/:id", usuarioController.atualizarUsuario);
 
+router.post("/login", usuarioController.loginUsuario);
+
 module.exports = router;

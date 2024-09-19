@@ -1,4 +1,4 @@
-const db = require("../database/database");
+const db = require("../database/database.js");
 
 exports.criarResposta = (req, res) => {
   const { postagem_id, conteudo } = req.body;
@@ -84,4 +84,3 @@ exports.avaliarResposta = (req, res) => {
     res.json({ message: "Avaliação registrada com sucesso" });
   });
 };
-

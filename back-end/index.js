@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cors = require("cors"); 
 const app = express();
 const port = 3000;
 
@@ -10,6 +11,7 @@ const respostaRoutes = require("./routes/respostas");
 const avaliacaoRoutes = require("./routes/avaliacoes");
 
 // Middleware
+app.use(cors()); // Usar o middleware CORS
 app.use(bodyParser.json());
 
 // Usar rotas

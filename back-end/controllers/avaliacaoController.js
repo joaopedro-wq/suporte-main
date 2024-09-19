@@ -1,5 +1,4 @@
-const db = require("../database/database");
-
+const db = require("../database/database.js");
 
 exports.criarAvaliacao = (req, res) => {
   const { resposta_id, nota } = req.body;
@@ -32,7 +31,6 @@ exports.listarAvaliacoes = (req, res) => {
   });
 };
 
-
 exports.listarAvaliacaoPorId = (req, res) => {
   const { id } = req.params;
   const sql = "SELECT * FROM avaliacoes WHERE id = ?";
@@ -44,7 +42,6 @@ exports.listarAvaliacaoPorId = (req, res) => {
     res.json({ data: row });
   });
 };
-
 
 exports.atualizarAvaliacao = (req, res) => {
   const { id } = req.params;
@@ -68,7 +65,6 @@ exports.atualizarAvaliacao = (req, res) => {
   });
 };
 
-
 exports.deletarAvaliacao = (req, res) => {
   const { id } = req.params;
   const sql = "DELETE FROM avaliacoes WHERE id = ?";
@@ -83,7 +79,6 @@ exports.deletarAvaliacao = (req, res) => {
     });
   });
 };
-
 
 exports.listarEstatisticas = (req, res) => {
   const sqlPostagens = "SELECT COUNT(*) AS total_postagens FROM postagens";
