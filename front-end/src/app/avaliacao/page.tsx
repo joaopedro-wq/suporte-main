@@ -2,11 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { getPostagens } from "../services/postagem";
-import { Typography, Container, Box, Divider } from "@mui/material";
+import {
+  Typography,
+  Container,
+  Box,
+  Divider,
+  List,
+  ListItem,
+  ListItemIcon,
+} from "@mui/material";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { listarRespostas } from "../services/resposta";
-import { List, ListItem, ListItemIcon } from "@mui/material";
 import CommentIcon from "@mui/icons-material/Comment";
 
 interface Postagem {
@@ -19,45 +26,37 @@ interface Postagem {
 }
 
 const AvaliacaoPage = () => {
-  const [postagens, setPostagens] = useState<Postagem[]>([]);
-  const [respostasMap, setRespostasMap] = useState<Map<number, string[]>>(
-    new Map()
-  );
-  const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [selectedPostagem, setSelectedPostagem] = useState<Postagem | null>(
-    null
-  );
+  const [postagem, setPostagem] = useState<Postagem | null>(null);
   const [respostas, setRespostas] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       const postagensResponse = await getPostagens();
       if (postagensResponse && postagensResponse.data) {
-        setPostagens(postagensResponse.data);
-        loadRespostas(postagensResponse.data);
-      }
-    };
+        // Recuperar o ID da postagem do cache
+        const postagemIdCache = localStorage.getItem("postagemIdCache");
 
-    const loadRespostas = async (postagens: Postagem[]) => {
-      const newRespostasMap = new Map<number, string[]>();
-      for (const postagem of postagens) {
-        const respostas = await listarRespostas(postagem.id);
-        newRespostasMap.set(
-          postagem.id,
-          respostas ? respostas.data.map((res) => res.conteudo) : []
-        );
+        if (postagemIdCache) {
+          const postagemEncontrada = postagensResponse.data.find(
+            (p: Postagem) => p.id === Number(postagemIdCache)
+          );
+
+          if (postagemEncontrada) {
+            setPostagem(postagemEncontrada);
+
+            const respostasApi = await listarRespostas(postagemEncontrada.id);
+            if (respostasApi && respostasApi.data) {
+              setRespostas(respostasApi.data.map((res) => res.conteudo));
+            } else {
+              setRespostas([]);
+            }
+          }
+        }
       }
-      setRespostasMap(newRespostasMap);
     };
 
     fetchData();
   }, []);
-
-  const handleOpenModal = (postagem: Postagem) => {
-    setSelectedPostagem(postagem);
-    setRespostas(respostasMap.get(postagem.id) || []);
-    setModalOpen(true);
-  };
 
   return (
     <>
@@ -77,9 +76,10 @@ const AvaliacaoPage = () => {
           gutterBottom
           sx={{ fontWeight: "bold", color: "#2196f3" }}
         >
-          Avaliação das Postagens
+          Avaliação da Postagem
         </Typography>
-        {postagens.map((postagem) => (
+
+        {postagem && (
           <Box
             key={postagem.id}
             sx={{
@@ -88,13 +88,7 @@ const AvaliacaoPage = () => {
               padding: "15px",
               borderRadius: "8px",
               boxShadow: 3,
-              transition: "background-color 0.3s",
-              "&:hover": {
-                backgroundColor: "#2c2c2c",
-                cursor: "pointer",
-              },
             }}
-            onClick={() => handleOpenModal(postagem)}
           >
             <Typography
               variant="h6"
@@ -121,8 +115,8 @@ const AvaliacaoPage = () => {
               Respostas:
             </Typography>
             <List sx={{ paddingLeft: 2, marginTop: "10px" }}>
-              {respostasMap.get(postagem.id)?.length > 0 ? (
-                respostasMap.get(postagem.id).map((resposta, index) => (
+              {respostas.length > 0 ? (
+                respostas.map((resposta, index) => (
                   <ListItem
                     key={index}
                     sx={{
@@ -148,7 +142,7 @@ const AvaliacaoPage = () => {
               )}
             </List>
           </Box>
-        ))}
+        )}
       </Container>
       <Footer />
     </>

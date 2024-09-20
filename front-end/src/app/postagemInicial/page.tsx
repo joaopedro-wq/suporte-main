@@ -27,6 +27,7 @@ import {
 } from "@mui/icons-material";
 import InfoIcon from "@mui/icons-material/Info";
 import { useRouter } from "next/navigation";
+import styled from 'styled-components';
 
 
 interface Postagem {
@@ -89,6 +90,7 @@ const PostagemInicial = () => {
 
       for (const postagem of postagens) {
         const respostas = await listarRespostas(postagem.id);
+       
         if (respostas && respostas.data.length > 0) {
           newRespostasMap.set(postagem.id, true);
         } else {
@@ -110,8 +112,10 @@ const PostagemInicial = () => {
 
   const handleOpenModal = async (postagem: Postagem) => {
     const success = await selecionarPostagem(postagem.id);
+   
     if (success) {
       setSelectedPostagem(postagem);
+     
 
       // Carregar respostas
       const respostasApi = await listarRespostas(postagem.id);
@@ -137,10 +141,35 @@ const PostagemInicial = () => {
     setSelectedPostagem(null);
     setResposta("");
   };
+   const [postagemIdCache, setPostagemIdCache] = useState<number | null>(null);
 
-  const redirectToAvaliacao = () => {
+const redirectToAvaliacao = async (postagem: Postagem) => {
+  const success = await selecionarPostagem(postagem.id);
+
+  if (success) {
+    // Armazenar o postagem_id no cache (localStorage ou sessionStorage)
+    localStorage.setItem("postagemIdCache", postagem.id.toString());
+
+    const respostasApi = await listarRespostas(postagem.id);
+    console.log("respostas 1", respostasApi);
+
+    if (respostasApi && respostasApi.data.length > 0) {
+      const conteudoRespostas = respostasApi.data.map(
+        (resposta) => resposta.conteudo
+      );
+      setRespostas(conteudoRespostas);
+    } else {
+      setRespostas([]);
+    }
+
+    // Redireciona após carregar as respostas
     router.push("/avaliacao");
-  };
+  } else {
+    console.error("Erro ao selecionar a postagem.");
+  }
+};
+
+
 
   // Função para salvar a resposta
   const handleSaveResposta = async () => {
@@ -293,7 +322,7 @@ const PostagemInicial = () => {
                     color="primary"
                     onClick={(e) => {
                       e.stopPropagation();
-                      redirectToAvaliacao();
+                       redirectToAvaliacao(postagem); 
                     }}
                     startIcon={<InfoIcon />}
                     sx={{
@@ -562,6 +591,7 @@ const PostagemInicial = () => {
         </Modal>
       </Container>
       <div style={{ marginBottom: "10%" }}></div>
+
       <Footer />
     </>
   );
