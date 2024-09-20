@@ -21,6 +21,46 @@ exports.criarAvaliacao = (req, res) => {
   });
 };
 
+exports.criarOuAtualizarAvaliacao = (req, res) => {
+  const { resposta_id, nota } = req.body;
+
+  if (nota < 0 || nota > 5) {
+    return res.status(400).json({ erro: "A nota deve ser entre 0 e 5" });
+  }
+
+  const sqlVerificar = "SELECT * FROM avaliacoes WHERE resposta_id = ?";
+  db.get(sqlVerificar, [resposta_id], (err, row) => {
+    if (err) {
+      return res.status(400).json({ erro: err.message });
+    }
+
+    if (row) {
+      const sqlAtualizar = "UPDATE avaliacoes SET nota = ? WHERE resposta_id = ?";
+      db.run(sqlAtualizar, [nota, resposta_id], function (err) {
+        if (err) {
+          return res.status(400).json({ erro: err.message });
+        }
+        res.json({
+          message: "Avaliação atualizada com sucesso",
+          data: { resposta_id, nota },
+        });
+      });
+    } else {
+      const sqlInserir = "INSERT INTO avaliacoes (resposta_id, nota) VALUES (?, ?)";
+      db.run(sqlInserir, [resposta_id, nota], function (err) {
+        if (err) {
+          return res.status(400).json({ erro: err.message });
+        }
+        res.json({
+          message: "Avaliação criada com sucesso",
+          data: { id: this.lastID, resposta_id, nota },
+        });
+      });
+    }
+  });
+};
+
+
 exports.listarAvaliacoes = (req, res) => {
   const sql = "SELECT * FROM avaliacoes";
   db.all(sql, [], (err, rows) => {

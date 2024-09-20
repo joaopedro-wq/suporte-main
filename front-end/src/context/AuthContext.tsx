@@ -1,4 +1,3 @@
-// src/context/AuthContext.tsx
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
@@ -29,13 +28,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (response.status === 200) {
         setIsAuthenticated(true);
-        router.push("/"); 
+        router.push("/");
       } else {
         throw new Error("Login falhou");
       }
     } catch (error) {
       console.error("Erro ao fazer login:", error);
-      throw error; 
+      throw error;
     }
   };
 
@@ -57,4 +56,3 @@ export const useAuth = () => {
   }
   return context;
 };
- 

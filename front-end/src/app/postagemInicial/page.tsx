@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getPostagens, selecionarPostagem } from "../services/postagem";
 import { criarResposta, listarRespostas } from "../services/resposta";
+import { listarAvaliacoes } from "../services/avaliacao";
 
 import {
   Typography,
@@ -13,22 +14,15 @@ import {
   Button,
   TextField,
   Badge,
-
+  Chip,
 } from "@mui/material";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { BuscarUsuarios } from "../services/authService";
-import {
-  Person,
-  DeviceHub,
-  Description,
-  CalendarToday,
-
-} from "@mui/icons-material";
+import { Person, DeviceHub, Description, CalendarToday, Star } from "@mui/icons-material";
 import InfoIcon from "@mui/icons-material/Info";
 import { useRouter } from "next/navigation";
 import styled from 'styled-components';
-
 
 interface Postagem {
   id: number;
@@ -46,19 +40,29 @@ interface Usuario {
   tipo: string;
 }
 
+interface Avaliacao {
+  resposta_id: number;
+  nota: number;
+}
+
+interface Resposta {
+  id: number;
+  postagem_id: number;
+  conteudo: string;
+}
+
 const PostagemInicial = () => {
   const [postagens, setPostagens] = useState<Postagem[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [estatisticas, setEstatisticas] = useState<{ [key: number]: { media: number; total: number } }>({});
+  const [respostasMap, setRespostasMap] = useState<Map<number, boolean>>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedPostagem, setSelectedPostagem] = useState<Postagem | null>(
-    null
-  );
+  const [selectedPostagem, setSelectedPostagem] = useState<Postagem | null>(null);
   const [resposta, setResposta] = useState<string>("");
-  const [respostasMap, setRespostasMap] = useState<Map<number, boolean>>(
-    new Map()
-  );
   const [respostas, setRespostas] = useState<string[]>([]);
+  const router = useRouter();
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -75,6 +79,45 @@ const PostagemInicial = () => {
         } else {
           setError("Nenhum usuário encontrado.");
         }
+
+        const avaliacaoResponse = await listarAvaliacoes();
+        if (avaliacaoResponse && avaliacaoResponse.data) {
+          const avaliacaoPorResposta: { [respostaId: number]: Avaliacao[] } = {};
+          avaliacaoResponse.data.forEach((avaliacao: Avaliacao) => {
+            if (!avaliacaoPorResposta[avaliacao.resposta_id]) {
+              avaliacaoPorResposta[avaliacao.resposta_id] = [];
+            }
+            avaliacaoPorResposta[avaliacao.resposta_id].push(avaliacao);
+          });
+
+          const newEstatisticas: { [key: number]: { media: number; total: number } } = {};
+          for (const postagem of postagensResponse.data) {
+            const respostas = await listarRespostas(postagem.id);
+            if (respostas && respostas.data.length > 0) {
+              let totalNotas = 0;
+              let totalAvaliacoes = 0;
+              respostas.data.forEach((resposta: Resposta) => {
+                const avaliacoes = avaliacaoPorResposta[resposta.id] || [];
+                if (avaliacoes.length > 0) {
+                  const somaNotas = avaliacoes.reduce((acc, curr) => acc + curr.nota, 0);
+                  totalNotas += somaNotas;
+                  totalAvaliacoes += avaliacoes.length;
+                }
+              });
+
+              if (totalAvaliacoes > 0) {
+                newEstatisticas[postagem.id] = {
+                  media: totalNotas / totalAvaliacoes,
+                  total: totalAvaliacoes,
+                };
+              }
+            }
+          }
+
+          setEstatisticas(newEstatisticas);
+        } else {
+          setError("Nenhuma avaliação encontrada.");
+        }
       } catch (err) {
         setError("Erro ao carregar dados.");
       }
@@ -82,7 +125,6 @@ const PostagemInicial = () => {
 
     fetchData();
   }, []);
-  const router = useRouter();
 
   useEffect(() => {
     const loadRespostas = async () => {
@@ -90,7 +132,6 @@ const PostagemInicial = () => {
 
       for (const postagem of postagens) {
         const respostas = await listarRespostas(postagem.id);
-       
         if (respostas && respostas.data.length > 0) {
           newRespostasMap.set(postagem.id, true);
         } else {
@@ -104,26 +145,15 @@ const PostagemInicial = () => {
     loadRespostas();
   }, [postagens]);
 
-  const usuariosMap = new Map(
-    usuarios.map((usuario) => [usuario.id, usuario.nome])
-  );
-
-  // Função para abrir o modal ao clicar no card
-
   const handleOpenModal = async (postagem: Postagem) => {
     const success = await selecionarPostagem(postagem.id);
-   
     if (success) {
       setSelectedPostagem(postagem);
-     
 
       // Carregar respostas
       const respostasApi = await listarRespostas(postagem.id);
-
       if (respostasApi && respostasApi.data.length > 0) {
-        const conteudoRespostas = respostasApi.data.map(
-          (resposta) => resposta.conteudo
-        );
+        const conteudoRespostas = respostasApi.data.map((resposta) => resposta.conteudo);
         setRespostas(conteudoRespostas);
       } else {
         setRespostas([]);
@@ -135,53 +165,37 @@ const PostagemInicial = () => {
     }
   };
 
-  // Função para fechar o modal
   const handleCloseModal = () => {
     setModalOpen(false);
     setSelectedPostagem(null);
     setResposta("");
   };
-   const [postagemIdCache, setPostagemIdCache] = useState<number | null>(null);
 
-const redirectToAvaliacao = async (postagem: Postagem) => {
-  const success = await selecionarPostagem(postagem.id);
+  const redirectToAvaliacao = async (postagem: Postagem) => {
+    const success = await selecionarPostagem(postagem.id);
+    if (success) {
+      localStorage.setItem("postagemIdCache", postagem.id.toString());
 
-  if (success) {
-    // Armazenar o postagem_id no cache (localStorage ou sessionStorage)
-    localStorage.setItem("postagemIdCache", postagem.id.toString());
+      const respostasApi = await listarRespostas(postagem.id);
+      if (respostasApi && respostasApi.data.length > 0) {
+        const conteudoRespostas = respostasApi.data.map((resposta) => resposta.conteudo);
+        setRespostas(conteudoRespostas);
+      } else {
+        setRespostas([]);
+      }
 
-    const respostasApi = await listarRespostas(postagem.id);
-    console.log("respostas 1", respostasApi);
-
-    if (respostasApi && respostasApi.data.length > 0) {
-      const conteudoRespostas = respostasApi.data.map(
-        (resposta) => resposta.conteudo
-      );
-      setRespostas(conteudoRespostas);
+      router.push("/avaliacao");
     } else {
-      setRespostas([]);
+      console.error("Erro ao selecionar a postagem.");
     }
+  };
 
-    // Redireciona após carregar as respostas
-    router.push("/avaliacao");
-  } else {
-    console.error("Erro ao selecionar a postagem.");
-  }
-};
-
-
-
-  // Função para salvar a resposta
   const handleSaveResposta = async () => {
     if (selectedPostagem) {
       const response = await criarResposta(selectedPostagem.id, resposta);
       if (response) {
-        console.log("Resposta criada com sucesso:", response);
-        // Atualizar o estado de respostas
         setRespostas((prevRespostas) => [...prevRespostas, resposta]);
-        setRespostasMap((prevMap) =>
-          new Map(prevMap).set(selectedPostagem.id, true)
-        );
+        setRespostasMap((prevMap) => new Map(prevMap).set(selectedPostagem.id, true));
         handleCloseModal();
       } else {
         console.error("Erro ao criar a resposta.");
@@ -189,6 +203,7 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
     }
   };
 
+  const usuariosMap = new Map(usuarios.map((usuario) => [usuario.id, usuario.nome]));
 
   return (
     <>
@@ -222,12 +237,7 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
         </Typography>
 
         {error && (
-          <Typography
-            variant="body1"
-            color="#ff6b6b"
-            align="center"
-            sx={{ marginTop: "20px" }}
-          >
+          <Typography variant="body1" color="#ff6b6b" align="center" sx={{ marginTop: "20px" }}>
             {error}
           </Typography>
         )}
@@ -274,12 +284,27 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
                     },
                   }}
                 />
+                {estatisticas[postagem.id]?.total > 0 && (
+                  <Chip
+                    label="Avaliada"
+                    color="success"
+                    sx={{
+                      position: "center",
+                      top: 10,
+                      left: 10,
+                      backgroundColor: "#b38917",
+                      color: "#fff",
+                    }}
+                  />
+                )}
+
                 <Typography
                   variant="h6"
                   color="#e0e0e0"
                   gutterBottom
                   sx={{ display: "flex", alignItems: "center", gap: "10px" }}
                 >
+                  <Star sx={{ color: "#ffeb3b" }} /> Média de Avaliação: {estatisticas[postagem.id]?.media.toFixed(2)}
                   <Person sx={{ color: "#64b5f6" }} />
                   {usuariosMap.get(postagem.usuario_id) || "Desconhecido"}
                 </Typography>
@@ -310,19 +335,23 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
                   <CalendarToday sx={{ color: "#e57373" }} />
                   {new Date(postagem.data_postagem).toLocaleDateString()}
                 </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    marginTop: "10px",
-                  }}
-                >
+
+                {estatisticas[postagem.id] && (
+                  <Box sx={{ display: "flex", alignItems: "center", marginTop: "10px", gap: "5px" }}>
+                    <Star sx={{ color: "#ffd700" }} />
+                    <Typography variant="body2" color="#e0e0e0">
+                      {estatisticas[postagem.id].media.toFixed(1)} / 5 ({estatisticas[postagem.id].total} avaliações)
+                    </Typography>
+                  </Box>
+                )}
+
+                <Box sx={{ display: "flex", justifyContent: "flex-end", marginTop: "10px" }}>
                   <Button
                     variant="contained"
                     color="primary"
                     onClick={(e) => {
                       e.stopPropagation();
-                       redirectToAvaliacao(postagem); 
+                      redirectToAvaliacao(postagem);
                     }}
                     startIcon={<InfoIcon />}
                     sx={{
@@ -345,31 +374,23 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
             Nenhuma postagem encontrada.
           </Typography>
         )}
-        <Modal
-          open={modalOpen}
-          onClose={handleCloseModal}
-          aria-labelledby="simple-modal-title"
-          aria-describedby="simple-modal-description"
-        >
+
+        {/* Modal para Exibir Respostas */}
+        <Modal open={modalOpen} onClose={handleCloseModal} aria-labelledby="simple-modal-title" aria-describedby="simple-modal-description">
           <Box
             sx={{
               position: "absolute",
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              width: 600, // Aumente a largura aqui
+              width: 600,
               bgcolor: "#18181b",
               boxShadow: 24,
               p: 4,
               color: "#e0e0e0",
             }}
           >
-            <Typography
-              id="simple-modal-title"
-              variant="h6"
-              component="h2"
-              sx={{ color: "#3b82f6" }}
-            >
+            <Typography id="simple-modal-title" variant="h6" component="h2" sx={{ color: "#3b82f6" }}>
               Modal de Postagem
             </Typography>
 
@@ -382,26 +403,14 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
                 mt: 2,
                 "& input": { color: "#e0e0e0" },
                 "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: "#555",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "#3b82f6",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#3b82f6",
-                  },
+                  "& fieldset": { borderColor: "#555" },
+                  "&:hover fieldset": { borderColor: "#3b82f6" },
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
                 },
-                "& label": {
-                  color: "#aaa",
-                },
-                "& label.Mui-focused": {
-                  color: "#3b82f6",
-                },
+                "& label": { color: "#aaa" },
+                "& label.Mui-focused": { color: "#3b82f6" },
               }}
-              InputProps={{
-                readOnly: true,
-              }}
+              InputProps={{ readOnly: true }}
             />
 
             <TextField
@@ -413,26 +422,14 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
                 mt: 2,
                 "& input": { color: "#e0e0e0" },
                 "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: "#555",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "#3b82f6",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#3b82f6",
-                  },
+                  "& fieldset": { borderColor: "#555" },
+                  "&:hover fieldset": { borderColor: "#3b82f6" },
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
                 },
-                "& label": {
-                  color: "#aaa",
-                },
-                "& label.Mui-focused": {
-                  color: "#3b82f6",
-                },
+                "& label": { color: "#aaa" },
+                "& label.Mui-focused": { color: "#3b82f6" },
               }}
-              InputProps={{
-                readOnly: true,
-              }}
+              InputProps={{ readOnly: true }}
             />
 
             <TextField
@@ -444,26 +441,14 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
                 mt: 2,
                 "& input": { color: "#e0e0e0" },
                 "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: "#555",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "#3b82f6",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#3b82f6",
-                  },
+                  "& fieldset": { borderColor: "#555" },
+                  "&:hover fieldset": { borderColor: "#3b82f6" },
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
                 },
-                "& label": {
-                  color: "#aaa",
-                },
-                "& label.Mui-focused": {
-                  color: "#3b82f6",
-                },
+                "& label": { color: "#aaa" },
+                "& label.Mui-focused": { color: "#3b82f6" },
               }}
-              InputProps={{
-                readOnly: true,
-              }}
+              InputProps={{ readOnly: true }}
             />
 
             <TextField
@@ -475,29 +460,16 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
               value={selectedPostagem?.descricao || ""}
               sx={{
                 mt: 2,
-                "& input": { color: "#e0e0e0" },
-                "& textarea": { color: "#e0e0e0" },
+                "& input, & textarea": { color: "#e0e0e0" },
                 "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: "#555",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "#3b82f6",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#3b82f6",
-                  },
+                  "& fieldset": { borderColor: "#555" },
+                  "&:hover fieldset": { borderColor: "#3b82f6" },
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
                 },
-                "& label": {
-                  color: "#aaa",
-                },
-                "& label.Mui-focused": {
-                  color: "#3b82f6",
-                },
+                "& label": { color: "#aaa" },
+                "& label.Mui-focused": { color: "#3b82f6" },
               }}
-              InputProps={{
-                readOnly: true,
-              }}
+              InputProps={{ readOnly: true }}
             />
 
             <Box sx={{ maxHeight: "200px", overflowY: "auto", mt: 2 }}>
@@ -517,25 +489,14 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
                   }}
                   sx={{
                     mt: 2,
-                    "& input": { color: "#e0e0e0" },
-                    "& textarea": { color: "#e0e0e0" },
+                    "& input, & textarea": { color: "#e0e0e0" },
                     "& .MuiOutlinedInput-root": {
-                      "& fieldset": {
-                        borderColor: "#555",
-                      },
-                      "&:hover fieldset": {
-                        borderColor: "#3b82f6",
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: "#3b82f6",
-                      },
+                      "& fieldset": { borderColor: "#555" },
+                      "&:hover fieldset": { borderColor: "#3b82f6" },
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
                     },
-                    "& label": {
-                      color: "#aaa",
-                    },
-                    "& label.Mui-focused": {
-                      color: "#3b82f6",
-                    },
+                    "& label": { color: "#aaa" },
+                    "& label.Mui-focused": { color: "#3b82f6" },
                   }}
                 />
               ))}
@@ -549,41 +510,21 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
                   mt: 2,
                   "& input": { color: "#e0e0e0" },
                   "& .MuiOutlinedInput-root": {
-                    "& fieldset": {
-                      borderColor: "#555",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#3b82f6",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#3b82f6",
-                    },
+                    "& fieldset": { borderColor: "#555" },
+                    "&:hover fieldset": { borderColor: "#3b82f6" },
+                    "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
                   },
-                  "& label": {
-                    color: "#aaa",
-                  },
-                  "& label.Mui-focused": {
-                    color: "#3b82f6",
-                  },
+                  "& label": { color: "#aaa" },
+                  "& label.Mui-focused": { color: "#3b82f6" },
                 }}
               />
             </Box>
 
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}
-            >
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSaveResposta}
-              >
+            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+              <Button variant="contained" color="primary" onClick={handleSaveResposta}>
                 Salvar Resposta
               </Button>
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={handleCloseModal}
-              >
+              <Button variant="outlined" color="secondary" onClick={handleCloseModal}>
                 Fechar
               </Button>
             </Box>
@@ -591,7 +532,6 @@ const redirectToAvaliacao = async (postagem: Postagem) => {
         </Modal>
       </Container>
       <div style={{ marginBottom: "10%" }}></div>
-
       <Footer />
     </>
   );
