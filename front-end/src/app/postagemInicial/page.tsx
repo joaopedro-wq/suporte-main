@@ -13,7 +13,7 @@ import {
   Button,
   TextField,
   Badge,
-  
+
 } from "@mui/material";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -23,7 +23,7 @@ import {
   DeviceHub,
   Description,
   CalendarToday,
-  
+
 } from "@mui/icons-material";
 import InfoIcon from "@mui/icons-material/Info";
 import { useRouter } from "next/navigation";
@@ -57,7 +57,7 @@ const PostagemInicial = () => {
   const [respostasMap, setRespostasMap] = useState<Map<number, boolean>>(
     new Map()
   );
-const [respostas, setRespostas] = useState<string[]>([]);
+  const [respostas, setRespostas] = useState<string[]>([]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -81,7 +81,7 @@ const [respostas, setRespostas] = useState<string[]>([]);
 
     fetchData();
   }, []);
-  const router = useRouter(); 
+  const router = useRouter();
 
   useEffect(() => {
     const loadRespostas = async () => {
@@ -89,7 +89,6 @@ const [respostas, setRespostas] = useState<string[]>([]);
 
       for (const postagem of postagens) {
         const respostas = await listarRespostas(postagem.id);
-        console.log("respostas", respostas);
         if (respostas && respostas.data.length > 0) {
           newRespostasMap.set(postagem.id, true);
         } else {
@@ -108,25 +107,22 @@ const [respostas, setRespostas] = useState<string[]>([]);
   );
 
   // Função para abrir o modal ao clicar no card
-  
+
   const handleOpenModal = async (postagem: Postagem) => {
     const success = await selecionarPostagem(postagem.id);
-    console.log("success", success);
     if (success) {
       setSelectedPostagem(postagem);
-      console.log("postagem", postagem);
 
       // Carregar respostas
       const respostasApi = await listarRespostas(postagem.id);
-      console.log("respostas 1", respostasApi);
 
       if (respostasApi && respostasApi.data.length > 0) {
         const conteudoRespostas = respostasApi.data.map(
           (resposta) => resposta.conteudo
         );
-        setRespostas(conteudoRespostas); 
+        setRespostas(conteudoRespostas);
       } else {
-        setRespostas([]); 
+        setRespostas([]);
       }
 
       setModalOpen(true);
@@ -141,30 +137,30 @@ const [respostas, setRespostas] = useState<string[]>([]);
     setSelectedPostagem(null);
     setResposta("");
   };
-    
- const redirectToAvaliacao = () => {
-   router.push("/avaliacao"); 
- };
-  
-  // Função para salvar a resposta
-const handleSaveResposta = async () => {
-  if (selectedPostagem) {
-    const response = await criarResposta(selectedPostagem.id, resposta);
-    if (response) {
-      console.log("Resposta criada com sucesso:", response);
-      // Atualizar o estado de respostas
-      setRespostas((prevRespostas) => [...prevRespostas, resposta]);
-      setRespostasMap((prevMap) =>
-        new Map(prevMap).set(selectedPostagem.id, true)
-      );
-      handleCloseModal();
-    } else {
-      console.error("Erro ao criar a resposta.");
-    }
-  }
-};
 
-      
+  const redirectToAvaliacao = () => {
+    router.push("/avaliacao");
+  };
+
+  // Função para salvar a resposta
+  const handleSaveResposta = async () => {
+    if (selectedPostagem) {
+      const response = await criarResposta(selectedPostagem.id, resposta);
+      if (response) {
+        console.log("Resposta criada com sucesso:", response);
+        // Atualizar o estado de respostas
+        setRespostas((prevRespostas) => [...prevRespostas, resposta]);
+        setRespostasMap((prevMap) =>
+          new Map(prevMap).set(selectedPostagem.id, true)
+        );
+        handleCloseModal();
+      } else {
+        console.error("Erro ao criar a resposta.");
+      }
+    }
+  };
+
+
   return (
     <>
       <Header />
@@ -296,8 +292,8 @@ const handleSaveResposta = async () => {
                     variant="contained"
                     color="primary"
                     onClick={(e) => {
-                      e.stopPropagation(); 
-                      redirectToAvaliacao(); 
+                      e.stopPropagation();
+                      redirectToAvaliacao();
                     }}
                     startIcon={<InfoIcon />}
                     sx={{
@@ -564,8 +560,8 @@ const handleSaveResposta = async () => {
             </Box>
           </Box>
         </Modal>
-          </Container>
-         
+      </Container>
+      <div style={{ marginBottom: "10%" }}></div>
       <Footer />
     </>
   );

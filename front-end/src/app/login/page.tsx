@@ -17,14 +17,18 @@ const LoginPage = () => {
 
     if (response) {
       // Armazenar o ID do usuário no localStorage para uso posterior
-        localStorage.setItem("userId", String(response.data.id)); 
-        console.log("response", response);
-        
+      localStorage.setItem("userId", String(response.data.id));
+
       // Redirecionar para a página de postagens
-      router.push("/postagem");
+      router.push("/postagemInicial");
     } else {
       setError("Credenciais inválidas");
     }
+  };
+
+  const handleRegisterRedirect = () => {
+    // Redirecionar para a página de registro
+    router.push("/cadastro");
   };
 
   const containerStyle = {
@@ -66,6 +70,7 @@ const LoginPage = () => {
     cursor: "pointer",
     width: "100%",
     fontSize: "16px",
+    marginTop: "10px", // Adding margin between buttons
   };
 
   const errorStyle = {
@@ -75,7 +80,6 @@ const LoginPage = () => {
 
   return (
     <div style={containerStyle}>
-      <h1>Login</h1>
       <form onSubmit={handleLogin} style={formStyle}>
         <div>
           <label>Username:</label>
@@ -99,6 +103,9 @@ const LoginPage = () => {
         </div>
         <button type="submit" style={buttonStyle}>
           Login
+        </button>
+        <button type="button" onClick={handleRegisterRedirect} style={buttonStyle}>
+          Register
         </button>
       </form>
       {error && <p style={errorStyle}>{error}</p>}
